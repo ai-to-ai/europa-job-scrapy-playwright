@@ -26,7 +26,7 @@ class MongoDBPipeline:
             now_utc = datetime.now(timezone.utc)
             date_str = now_utc.strftime("%Y_%m_%d_%H_%M_%S")
             file_name = spider.name +"_"+ date_str + '.xml'
-            self.xml_file = open(file_name, 'w')
+            self.xml_file = open('./xml/'+file_name, 'w')
             headerTemplate = f"""<?xml version="1.0" encoding="UTF-8"?>
                                     <root>
                                         <company>
@@ -60,49 +60,52 @@ class MongoDBPipeline:
             now_utc = datetime.now(timezone.utc)
             date_ = now_utc.strftime("%d/%m/%Y")
 
-            # job['crawlDate'] = date_
+            job['crawlDate'] = date_
 
+            print('######### Saving XML #########')
+            if spider.name == "XML_EE":
+                companyTemplate = f"""<company>
+                                            <companyID></companyID>
+                                            <companyName><![CDATA[{job['employer']['name']}]]></companyName>
+                                            <companyUrl><![CDATA[{job['employer']['website']}]]></companyUrl>
+                                            <companyJobOffersUrl><![CDATA[{job['link']}]]></companyJobOffersUrl>
+                                            <companyJobSampleUrl><![CDATA[{job['link']}]]></companyJobSampleUrl>
+                                            <country><![CDATA[{job['country']}]]></country>
+                                            <companyContactFirstName><![CDATA[]]></companyContactFirstName>
+                                            <companyContactLastName><![CDATA[]]></companyContactLastName>
+                                            <companyContactGender><![CDATA[]]></companyContactGender>
+                                            <companyAddress><![CDATA[{''.join(job['locations'][0]['addressLines'])}]]></companyAddress>
+                                            <companyZip><![CDATA[{job['locations'][0]['postalCode']}]]></companyZip>
+                                            <companyCity><![CDATA[{job['locations'][0]['cityName']}]]></companyCity>
+                                            <companyPhone><![CDATA[{job['phone']}]]></companyPhone>
+                                            <companyEmail><![CDATA[{job['email']}]]></companyEmail>
+                                            <companyJobOffersNumber>{job['numberOfPosts']}</companyJobOffersNumber>
+                                            <lastCrawlDate>![CDATA[{job['crawlDate']}]]</lastCrawlDate>
+                                                <jobs>
+                                                    <job>
+                                                        <id>{job['handle']}</id>
+                                                        <title><![CDATA[{job['title']}]]></title>
+                                                        <description><![CDATA[{job['description']}]]></description>
+                                                        <url><![CDATA[{job['link']}]]></url>
+                                                        <date>{job['creationDate']}</date>
+                                                        <address><![CDATA[{''.join(job['locations'][0]['addressLines'])}]]></address>
+                                                        <city><![CDATA[{job['locations'][0]['cityName']}]]></city>
+                                                        <country><![CDATA[{job['country']}]]></country>
+                                                        <zip><![CDATA[{job['locations'][0]['postalCode']}]]></zip>
+                                                        <email><![CDATA[{job['email']}]]></email>
+                                                        <reference><![CDATA[{job['vacancy']}]]></reference>
+                                                        <isco><![CDATA[]]></isco>
+                                                        <website><![CDATA[{job['employer']['website']}]]></website>
+                                                    </job>
+                                                </jobs>
+                                        </company>
+                                    """
+
+                self.xml_file.write(companyTemplate)
             print('######### Saving item to db #########')
             handle = self.job_collection.find_one({"handle": job["handle"]})
             if handle is None:
-                if spider.name == "XML_EE":
-                    companyTemplate = f"""<company>
-                                                <companyID></companyID>
-                                                <companyName><![CDATA[{job['employer']['name']}]]></companyName>
-                                                <companyUrl><![CDATA[{job['employer']['website']}]]></companyUrl>
-                                                <companyJobOffersUrl><![CDATA[{job['link']}]]></companyJobOffersUrl>
-                                                <companyJobSampleUrl><![CDATA[{job['link']}]]></companyJobSampleUrl>
-                                                <country><![CDATA[{job['country']}]]></country>
-                                                <companyContactFirstName><![CDATA[]]></companyContactFirstName>
-                                                <companyContactLastName><![CDATA[]]></companyContactLastName>
-                                                <companyContactGender><![CDATA[]]></companyContactGender>
-                                                <companyAddress><![CDATA[{''.join(job['locations'][0]['addressLines'])}]]></companyAddress>
-                                                <companyZip><![CDATA[{job['locations'][0]['postalCode']}]]></companyZip>
-                                                <companyCity><![CDATA[{job['locations'][0]['cityName']}]]></companyCity>
-                                                <companyPhone><![CDATA[{job['phone']}]]></companyPhone>
-                                                <companyEmail><![CDATA[{job['email']}]]></companyEmail>
-                                                <companyJobOffersNumber>{job['numberOfPosts']}</companyJobOffersNumber>
-                                                <lastCrawlDate>![CDATA[{job['crawlDate']}]]</lastCrawlDate>
-                                                    <jobs>
-                                                        <job>
-                                                            <id>{job['handle']}</id>
-                                                            <title><![CDATA[{job['title']}]]></title>
-                                                            <description><![CDATA[{job['description']}]]></description>
-                                                            <url><![CDATA[{job['link']}]]></url>
-                                                            <date>{job['creationDate']}</date>
-                                                            <address><![CDATA[{''.join(job['locations'][0]['addressLines'])}]]></address>
-                                                            <city><![CDATA[{job['locations'][0]['cityName']}]]></city>
-                                                            <country><![CDATA[{job['country']}]]></country>
-                                                            <zip><![CDATA[{job['locations'][0]['postalCode']}]]></zip>
-                                                            <email><![CDATA[{job['email']}]]></email>
-                                                            <reference><![CDATA[{job['vacancy']}]]></reference>
-                                                            <isco><![CDATA[]]></isco>
-                                                            <website><![CDATA[{job['employer']['website']}]]></website>
-                                                        </job>
-                                                    </jobs>
-                                            </company>"""
 
-                    self.xml_file.write(companyTemplate)
                 self.job_collection.insert_one(job)
                 print('######### Item saved #########')
 
